@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrderStatus {
+  Pending
+  Processing
+  Shipped
+  Delivered
+  Cancelled
+}
+
+model Order {
+  id        String      @id
+  customer  String
+  email     String
+  date      DateTime    @db.Date
+  total     Int
+  status    OrderStatus @default(Pending)
+  version   Int         @default(0)
+  createdAt DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime    @updatedAt @db.Timestamptz(3)
+
+  lineItems OrderItem[]
+  history   OrderEvent[]
+  returnRequest ReturnRequest?
+
+  @@index([status, date])
+  @@index([date])
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  sku       String
+  name      String
+  quantity  Int
+  unitPrice Int
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, sku])
+}
+
+model OrderEvent {
+  id        String      @id @default(cuid())
+  orderId   String
+  sequence  Int
+  status    OrderStatus
+  createdAt DateTime    @default(now()) @db.Timestamptz(3)
+  actor     String
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, sequence])
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          String    @default("manager")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+enum ReturnStatus {
+  Requested
+  Approved
+  Rejected
+  Received
+  Refunded
+}
+
+enum ReturnReason {
+  Damaged
+  WrongItem
+  NotAsDescribed
+  ChangedMind
+  Other
+}
+
+model ReturnRequest {
+  id        String       @id @default(cuid())
+  orderId   String       @unique
+  status    ReturnStatus @default(Requested)
+  reason    ReturnReason
+  comment   String?
+  amount    Int
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime     @updatedAt @db.Timestamptz(3)
+
+  order   Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  history ReturnEvent[]
+
+  @@index([status, createdAt])
+}
+
+model ReturnEvent {
+  id        String       @id @default(cuid())
+  returnId  String
+  sequence  Int
+  status    ReturnStatus
+  actor     String
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
+
+  returnRequest ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Restrict)
+
+  @@unique([returnId, sequence])
+}
