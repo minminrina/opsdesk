@@ -4,6 +4,17 @@ An internal order and return management application for e-commerce teams.
 
 Built with Next.js, TypeScript, PostgreSQL, and Prisma. Employees can manage order statuses, process return requests, and review the history of each operation.
 
+## Screenshots
+
+### Orders workspace
+![Orders workspace with search, filters, and pagination](docs/screenshots/orders.png)
+
+### Order details
+![Order details with line items and status history](docs/screenshots/order-details.png)
+
+### Return processing
+![Return request status and processing history](docs/screenshots/return-workflow.png)
+
 ## Features
 
 ### Order management
@@ -228,3 +239,7 @@ This is a portfolio MVP using sample data.
 - Synchronization uses polling rather than WebSockets.
 - Partial returns and real payments are not supported.
 - Sales charts and automated end-to-end tests are planned improvements.
+
+[Live Demo](https://opsdesk-rho.vercel.app) · [Source Code](https://github.com/minminrina/opsdesk)
+
+> The live application requires an employee account. Public registration is disabled.
